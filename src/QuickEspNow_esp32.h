@@ -159,7 +159,7 @@ protected:
     static void espnowRxTask_cb (void* param);
     void espnowRxHandle ();
 
-    static void ICACHE_FLASH_ATTR rx_cb (uint8_t* mac_addr, uint8_t* data, uint8_t len);
+    static void ICACHE_FLASH_ATTR rx_cb(const esp_now_recv_info_t* esp_now_info, const uint8_t* data, int len);
     static void ICACHE_FLASH_ATTR tx_cb (uint8_t* mac_addr, uint8_t status);
 };
 
