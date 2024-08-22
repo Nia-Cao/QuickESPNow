@@ -310,7 +310,7 @@ void QuickEspNow::initComms () {
         delay (1);
     }
 
-    esp_now_register_recv_cb (reinterpret_cast<esp_now_recv_cb_t>(rx_cb));
+    esp_now_register_recv_cb (rx_cb);
     esp_now_register_send_cb (reinterpret_cast<esp_now_send_cb_t>(tx_cb));
 
     int txQueueSize = queueSize;
@@ -361,32 +361,32 @@ void QuickEspNow::espnowRxTask_cb (void* param) {
     }
 }
 
-void QuickEspNow::rx_cb (uint8_t* mac_addr, uint8_t* data, uint8_t len) {
-    espnow_frame_format_t* espnow_data = (espnow_frame_format_t*)(data - sizeof (espnow_frame_format_t));
-    wifi_promiscuous_pkt_t* promiscuous_pkt = (wifi_promiscuous_pkt_t*)(data - sizeof (wifi_pkt_rx_ctrl_t) - sizeof (espnow_frame_format_t));
+void QuickEspNow::rx_cb(const esp_now_recv_info_t* esp_now_info, const uint8_t* data, int len) {
+    espnow_frame_format_t* espnow_data = (espnow_frame_format_t*)(data - sizeof(espnow_frame_format_t));
+    wifi_promiscuous_pkt_t* promiscuous_pkt = (wifi_promiscuous_pkt_t*)(data - sizeof(wifi_pkt_rx_ctrl_t) - sizeof(espnow_frame_format_t));
     wifi_pkt_rx_ctrl_t* rx_ctrl = &promiscuous_pkt->rx_ctrl;
-
+    const uint8_t* mac_addr = esp_now_info->src_addr;
     comms_rx_queue_item_t message;
 
-    DEBUG_DBG (QESPNOW_TAG, "Received message with RSSI %d from " MACSTR " Len: %u", rx_ctrl->rssi, MAC2STR (mac_addr), len);
+    DEBUG_DBG(QESPNOW_TAG, "Received message with RSSI %d from " MACSTR " Len: %u", rx_ctrl->rssi, MAC2STR(esp_now_info->src_addr), len);
 
-    memcpy (message.srcAddress, mac_addr, ESP_NOW_ETH_ALEN);
-    memcpy (message.payload, data, len);
+    memcpy(message.srcAddress, mac_addr, ESP_NOW_ETH_ALEN);
+    memcpy(message.payload, data, len);
     message.payload_len = len;
     message.rssi = rx_ctrl->rssi;
-    memcpy (message.dstAddress, espnow_data->destination_address, ESP_NOW_ETH_ALEN);
+    memcpy(message.dstAddress, espnow_data->destination_address, ESP_NOW_ETH_ALEN);
 
-    if (uxQueueMessagesWaiting (quickEspNow.rx_queue) >= quickEspNow.queueSize) {
+    if (uxQueueMessagesWaiting(quickEspNow.rx_queue) >= quickEspNow.queueSize) {
         comms_rx_queue_item_t tempBuffer;
-        xQueueReceive (quickEspNow.rx_queue, &tempBuffer, 0);
-        DEBUG_DBG (QESPNOW_TAG, "Rx Message dropped");
+        xQueueReceive(quickEspNow.rx_queue, &tempBuffer, 0);
+        DEBUG_DBG(QESPNOW_TAG, "Rx Message dropped");
     }
 #ifdef MEAS_TPUT
     quickEspNow.rxDataReceived += len;
 #endif // MEAS_TPUT
 
-    if (!xQueueSend (quickEspNow.rx_queue, &message, pdMS_TO_TICKS (100))) {
-        DEBUG_WARN (QESPNOW_TAG, "Error sending message to queue");
+    if (!xQueueSend(quickEspNow.rx_queue, &message, pdMS_TO_TICKS(100))) {
+        DEBUG_WARN(QESPNOW_TAG, "Error sending message to queue");
     }
 }
 
