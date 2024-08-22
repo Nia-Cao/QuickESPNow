@@ -4,6 +4,8 @@
 
 ## Introduction
 
+This fork includes a change to the rx_cb signature for compatibility with the 5.x Espressif IDF.
+
 This is a library for Arduino framework to be used with Espressif ESP8266 and ESP32 series microcontrollers.
 
 ESP-NOW is a wireless communication protocol that allows two devices to send data to each other without the need for a wireless network. You can read more about it here [https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_now.html](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_now.html)
